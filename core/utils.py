@@ -10,11 +10,15 @@ def authorization(func):
         try:
             token        = request.headers.get('Authorization')
 
+            print(token)
+
             if not token:
                 return JsonResponse({'ERROR' : 'Token required'}, status = 401)
 
             payload      = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+            print(payload)
             request.user = User.objects.get(id=payload['id'])
+            print(request.user)
 
             return func(self, request, *args, **kwargs)
 

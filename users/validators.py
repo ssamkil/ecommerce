@@ -7,4 +7,4 @@ class Validator:
 
     def validate_password(self, password):
         if len(password) < 8:
-            raise ValidationError('Length of password needs to be longer than 8')
+            raise ValidationError('Minimum length of password should be 8')
