@@ -4,6 +4,7 @@ from django.views   import View
 from django.http                import JsonResponse
 from django.core.exceptions     import ValidationError
 
+from posts.models import Post
 from .models        import Comment
 from core.utils     import authorization
 
@@ -29,7 +30,7 @@ class CommentView(View):
             data        = json.loads(request.body)
             user        = request.user
             text        = data['text']
-            parent_id   = data.get('parent_id', None)
+            parent_id   = data.get('parent_id')
 
             Comment.objects.create(
                 text        = text,
