@@ -7,16 +7,28 @@ from django.core.exceptions     import ValidationError
 from posts.models import Post
 from .models        import Comment
 from core.utils     import authorization
+from rest_framework import serializers
+
+class CommentSerializer(serializers.ModelSerializer):
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'text', 'replies']
+
+    def get_replies(self, obj):
+        if obj.parent_id is None:
+            return CommentSerializer(obj.replies.all(), many=True).data
+
+        return []
 
 class CommentView(View):
-    def get(self, request):
+    def get(self, request, post_id):
         try:
-            data = json.loads(request.body)
-            comment_id = data['id']
+            parent_comments = Comment.objects.filter(post_id=post_id, parent=None).prefetch_related('replies')
+            serializer = CommentSerializer(parent_comments, many=True)
 
-            comment = Comment.objects.get(id=comment_id)
-
-            return JsonResponse({'text : ' : comment.text}, status=200)
+            return JsonResponse(serializer.data, status=200)
 
         except ValidationError as e:
             return JsonResponse({'ERROR': e.message}, status=400)
