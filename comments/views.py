@@ -28,7 +28,7 @@ class CommentView(View):
             parent_comments = Comment.objects.filter(post_id=post_id, parent=None).prefetch_related('replies')
             serializer = CommentSerializer(parent_comments, many=True)
 
-            return JsonResponse(serializer.data, status=200)
+            return JsonResponse({'comments' : serializer.data}, status=200)
 
         except ValidationError as e:
             return JsonResponse({'ERROR': e.message}, status=400)
