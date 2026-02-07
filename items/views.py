@@ -5,6 +5,7 @@ from django.views               import View
 from django.http                import JsonResponse
 from django.core.exceptions     import ValidationError
 from django.core.serializers    import serialize
+from django.db                  import transaction
 
 from .models                    import Item, Category, Review
 from core.utils                 import authorization
@@ -72,19 +73,27 @@ class ItemView(View):
     def patch(self, request):
         try:
             data = json.loads(request.body)
+            item_id = data['id']
 
-            item_name = data['name']
+            with transaction.atomic():
+                item = Item.objects.select_for_update().get(id=item_id)
 
-            item = Item.objects.get(name=item_name)
+                update_fields = ['name', 'price', 'quantity', 'image_url']
+                fields_to_save = []
 
-            item.name      = data['name']
-            item.price     = data['price']
-            item.quantity  = data['quantity']
-            item.image_url = data['image_url']
+                updated_data_exists = False
 
-            item.save()
+                for field in update_fields:
+                    if field in data:
+                        setattr(item, field, data[field])
+                        fields_to_save.append(field)
+                        updated_data_exists = True
 
-            return JsonResponse({'MESSAGE' : 'Updated'}, status=200)
+                if updated_data_exists:
+                    item.save(update_fields=fields_to_save)
+                    return JsonResponse({'MESSAGE' : 'UPDATED'}, status=200)
+
+            return JsonResponse({'MESSAGE' : 'NO CHANGES WERE MADE'}, status=200)
 
         except ValidationError as e:
             return JsonResponse({'ERROR' : e.message}, status=400)
