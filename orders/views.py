@@ -19,65 +19,64 @@ class OrderView(View):
             user = request.user
             address = data['address']
 
-            with transaction.atomic():
-                carts = Cart.objects.filter(
-                    user=user
-                ).select_related(
-                    'item'
-                ).annotate(
-                    price = Sum(F('item__quantity') * F('item__price'))
-                )
+            order = Order.objects.create(
+                user=user,
+                address=address,
+                order_number=str(uuid.uuid4()),
+                order_status_id=OrderStatus.Status.PENDING
+            )
+            try:
+                with transaction.atomic():
+                    carts = Cart.objects.filter(
+                        user=user
+                    ).select_related(
+                        'item'
+                    ).annotate(
+                        price = Sum(F('item__quantity') * F('item__price'))
+                    )
 
-                if not carts.exists():
-                    return JsonResponse({'MESSAGE' : 'EMPTY_CART'}, status=400)
+                    if not carts.exists():
+                        return JsonResponse({'MESSAGE' : 'EMPTY_CART'}, status=400)
 
-                order = Order.objects.create(
-                    user            = user,
-                    address         = address,
-                    order_number    = str(uuid.uuid4()),
-                    order_status_id = OrderStatus.Status.PENDING
-                )
+                    cart_items = list(carts)
+                    item_ids = [cart.item.id for cart in cart_items]
 
-                cart_items = list(carts)
-                item_ids = [cart.item.id for cart in cart_items]
+                    locked_item = Item.objects.select_for_update().filter(id__in=item_ids)  # 데이터 잠금 - 여러명이 동시 주문시 문제 발생
+                    item_map = {item.id: item for item in locked_item}
 
-                locked_item = Item.objects.select_for_update().filter(id__in=item_ids)  # 데이터 잠금 - 여러명이 동시 주문시 문제 발생 가능
-                item_map = {item.id: item for item in locked_item}
+                    order_items = []
 
-                order_items = []
+                    for cart in cart_items:
+                        item = item_map.get(cart.item.id)
 
-                for cart in cart_items:
-                    item = item_map.get(cart.item.id)
+                        if item.quantity < cart.quantity:
+                            raise IntegrityError(f'INSUFFICIENT_STOCK : {item.name}')
 
-                    if item.quantity < cart.quantity:
-                        raise IntegrityError(f'INSUFFICIENT_STOCK : {item.name}')
+                        item.quantity -= cart.quantity
+                        item.save()
 
-                    item.quantity -= cart.quantity
-                    item.save()
+                        order_items.append(OrderItem(
+                            item=cart.item,
+                            order=order,
+                            quantity=cart.quantity
+                        ))
 
-                    order_items.append(OrderItem(
-                        item=cart.item,
-                        order=order,
-                        quantity=cart.quantity
-                    ))
+                    Cart.objects.filter(user=user).delete()
 
-                Cart.objects.filter(user=user).delete()
+                    OrderItem.objects.bulk_create(order_items)
 
-                OrderItem.objects.bulk_create(order_items)
+                    order.order_status_id = OrderStatus.Status.COMPLETED
+                    order.save()
 
-                order.order_status_id = OrderStatus.Status.COMPLETED
+                    return JsonResponse({'MESSAGE': 'Created'}, status=201)
+
+            except Exception as e:
+                order.order_status_id = OrderStatus.Status.DECLINED
                 order.save()
+                return JsonResponse({'MESSAGE' : str(e)}, status=400)
 
-            return JsonResponse({'MESSAGE' : 'Created'}, status=201)
-
-        except IntegrityError as e:
+        except (IntegrityError, ValidationError, KeyError, ValueError) as e:
             return JsonResponse({'ERROR' : str(e)}, status=400)
-
-        except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
-
-        except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
 
     @authorization
     def get(self, request, order_id):
