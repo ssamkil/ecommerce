@@ -1,10 +1,11 @@
 import json
-from datetime                   import datetime
 
 from django.views               import View
 from django.http                import JsonResponse
+from django.core.cache          import cache
 from django.core.exceptions     import ValidationError
 from django.core.serializers    import serialize
+from django.core.paginator      import Paginator
 from django.db                  import transaction
 
 from .models                    import Item, Category, Review
@@ -15,27 +16,57 @@ class ItemView(View):
     def get(self, request):
         try:
             name = request.GET.get('name', None)
+            page = request.GET.get('page', 1)
 
-            item_found = Item.objects.filter(name=name)
+            if name:
+                cache_key = f"item_search:{name}:page:{page}"
+            else:
+                cache_key = f"item_list:total:page:{page}"
 
-            serialized_data = serialize('json', item_found)
-            serialized_data = json.loads(serialized_data)
+            cached_result = cache.get(cache_key)
 
-            created_at_str = serialized_data[0]['fields']['created_at']
-            created_at_obj = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S')
-            modified_at_str = serialized_data[0]['fields']['created_at']
-            modified_at_obj = datetime.strptime(modified_at_str, '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S')
+            if cached_result:
+                return JsonResponse({'MESSAGE': 'SUCCESS', 'RESULT': cached_result}, status=200)
 
-            serialized_data[0]['fields']['created_at'] = created_at_obj
-            serialized_data[0]['fields']['modified_at'] = modified_at_obj
+            if name:
+                items = Item.objects.filter(name=name)
+            else:
+                items = Item.objects.all().order_by('-created_at')
 
-            return JsonResponse({'MESSAGE' : 'SUCCESS', 'RESULT' : serialized_data[0]['fields']}, status=200)
+            if not items.exists():
+                return JsonResponse({'MESSAGE': 'ITEM_NOT_FOUND'}, status=404)
+
+            paginator = Paginator(items, 20)
+            items_page = paginator.get_page(page)
+
+            result = [{
+                'id'            : items.id,
+                'name'          : items.name,
+                'price'         : items.price,
+                'quantity'      : items.quantity,
+                'image_url'     : items.image_url,
+                'created_at'    : items.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'modified_at'   : items.modified_at.strftime('%Y-%m-%d %H:%M:%S')
+            } for items in items_page]
+
+            cache.set(cache_key, result, timeout=600)
+
+            return JsonResponse({
+                'MESSAGE'       : 'SUCCESS',
+                'RESULT'        : result,
+                'TOTAL_COUNT'   : paginator.count,
+                'TOTAL_PAGES'   : paginator.num_pages,
+                'CURRENT_PAGE'  : items_page.number
+            }, status=200)
 
         except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
+            return JsonResponse({'ERROR': e.message}, status=400)
 
         except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'ERROR': str(e)}, status=400)
 
     @authorization
     def post(self, request):
@@ -51,7 +82,7 @@ class ItemView(View):
             category = Category.objects.get(id=category_id)
 
             if Item.objects.filter(name=name).exists():
-                return JsonResponse({'ERROR' : 'Item already exist'}, status=400)
+                return JsonResponse({'ERROR': 'Item already exist'}, status=400)
 
             Item.objects.create(
                 category    = category,
@@ -61,7 +92,7 @@ class ItemView(View):
                 image_url   = image_url,
             )
 
-            return JsonResponse({'MESSAGE' : 'Created'}, status=201)
+            return JsonResponse({'MESSAGE': 'Created'}, status=201)
 
         except ValidationError as e:
             return JsonResponse({'ERROR' : e.message}, status=400)
@@ -91,15 +122,17 @@ class ItemView(View):
 
                 if updated_data_exists:
                     item.save(update_fields=fields_to_save)
-                    return JsonResponse({'MESSAGE' : 'UPDATED'}, status=200)
+                    cache.clear()
 
-            return JsonResponse({'MESSAGE' : 'NO CHANGES WERE MADE'}, status=200)
+                    return JsonResponse({'MESSAGE': 'UPDATED'}, status=200)
+
+            return JsonResponse({'MESSAGE': 'NO CHANGES WERE MADE'}, status=200)
 
         except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
+            return JsonResponse({'ERROR': e.message}, status=400)
 
         except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
     @authorization
     def delete(self, request):
