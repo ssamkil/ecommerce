@@ -26,33 +26,30 @@ class ItemView(View):
             cached_result = cache.get(cache_key)
 
             if cached_result:
-                return JsonResponse({'MESSAGE': 'SUCCESS', 'RESULT': cached_result}, status=200)
+                return JsonResponse({'MESSAGE': 'SUCCESS (CACHE)', 'RESULT': cached_result}, status=200)
 
             if name:
-                items = Item.objects.filter(name=name)
+                items = Item.objects.filter(name__icontains=name)
             else:
                 items = Item.objects.all().order_by('-created_at')
-
-            if not items.exists():
-                return JsonResponse({'MESSAGE': 'ITEM_NOT_FOUND'}, status=404)
 
             paginator = Paginator(items, 20)
             items_page = paginator.get_page(page)
 
             result = [{
-                'id'            : items.id,
-                'name'          : items.name,
-                'price'         : items.price,
-                'quantity'      : items.quantity,
-                'image_url'     : items.image_url,
-                'created_at'    : items.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at'   : items.modified_at.strftime('%Y-%m-%d %H:%M:%S')
-            } for items in items_page]
+                'id'            : item.id,
+                'name'          : item.name,
+                'price'         : item.price,
+                'quantity'      : item.quantity,
+                'image_url'     : item.image_url,
+                'created_at'    : item.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'modified_at'   : item.modified_at.strftime('%Y-%m-%d %H:%M:%S')
+            } for item in items_page]
 
             cache.set(cache_key, result, timeout=600)
 
             return JsonResponse({
-                'MESSAGE'       : 'SUCCESS',
+                'MESSAGE'       : 'SUCCESS (DB)',
                 'RESULT'        : result,
                 'TOTAL_COUNT'   : paginator.count,
                 'TOTAL_PAGES'   : paginator.num_pages,
