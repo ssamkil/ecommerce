@@ -7,7 +7,7 @@ from items.models           import Item
 
 from django.http            import JsonResponse
 from django.views           import View
-from django.db              import transaction, IntegrityError
+from django.db              import transaction, IntegrityError, DatabaseError
 from django.db.models       import F, Sum
 from django.core.exceptions import ValidationError
 
@@ -41,7 +41,7 @@ class OrderView(View):
                     cart_items = list(carts)
                     item_ids = [cart.item.id for cart in cart_items]
 
-                    locked_item = Item.objects.select_for_update().filter(id__in=item_ids)  # 데이터 잠금 - 여러명이 동시 주문시 문제 발생
+                    locked_item = Item.objects.select_for_update(nowait=True).filter(id__in=item_ids)  # 데이터 잠금 - 여러명이 동시 주문시 문제 발생T
                     item_map = {item.id: item for item in locked_item}
 
                     order_items = []
@@ -70,10 +70,13 @@ class OrderView(View):
 
                     return JsonResponse({'MESSAGE': 'Created'}, status=201)
 
+            except DatabaseError as e:
+                return JsonResponse({'ERROR': 'ITEM CURRENTLY UNDER MODIFICATION'}, status=409)
+
             except Exception as e:
                 order.order_status_id = OrderStatus.Status.DECLINED
                 order.save()
-                return JsonResponse({'MESSAGE' : str(e)}, status=400)
+                return JsonResponse({'ERROR' : str(e)}, status=400)
 
         except (IntegrityError, ValidationError, KeyError, ValueError) as e:
             return JsonResponse({'ERROR' : str(e)}, status=400)

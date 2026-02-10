@@ -1,5 +1,6 @@
 import random
-from locust     import HttpUser, task, between
+
+from locust import HttpUser, task, between
 
 class FakeUsers(HttpUser):
     wait_time = between(1, 3)

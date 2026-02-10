@@ -3,11 +3,11 @@ from django.db    import models
 from core.models  import TimeStampModel
 
 class Item(TimeStampModel):
-    category   = models.ForeignKey('Category', on_delete=models.CASCADE)
-    name       = models.CharField(max_length=200)
-    price      = models.FloatField()
-    quantity   = models.PositiveSmallIntegerField()
-    image_url  = models.URLField(max_length=400, blank=True)
+    category    = models.ForeignKey('Category', on_delete=models.CASCADE)
+    name        = models.CharField(max_length=200)
+    price       = models.FloatField()
+    quantity    = models.PositiveSmallIntegerField()
+    image       = models.ImageField(upload_to='', null=True, blank=True)
 
     class Meta:
         db_table = 'items'

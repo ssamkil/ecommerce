@@ -13,7 +13,7 @@ from my_settings import DATABASES, SECRET_KEY
 
 from pathlib import Path
 
-import pymysql
+import pymysql, os
 
 pymysql.install_as_MySQLdb()
 
@@ -134,8 +134,8 @@ STATIC_URL = 'static/'
 
 # Image files
 
-MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'templates' / 'images'
+MEDIA_URL = '/images/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

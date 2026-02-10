@@ -6,7 +6,7 @@ from django.core.cache          import cache
 from django.core.exceptions     import ValidationError
 from django.core.serializers    import serialize
 from django.core.paginator      import Paginator
-from django.db                  import transaction
+from django.db                  import transaction, DatabaseError
 
 from .models                    import Item, Category, Review
 from core.utils                 import authorization
@@ -18,10 +18,12 @@ class ItemView(View):
             name = request.GET.get('name', None)
             page = request.GET.get('page', 1)
 
+            global_version = cache.get('item_list_version', 1)
+
             if name:
-                cache_key = f"item_search:{name}:page:{page}"
+                cache_key = f"item_search:v{global_version}:{name}:page:{page}"
             else:
-                cache_key = f"item_list:total:page:{page}"
+                cache_key = f"item_list:{global_version}:total:page:{page}"
 
             cached_result = cache.get(cache_key)
 
@@ -36,15 +38,18 @@ class ItemView(View):
             paginator = Paginator(items, 20)
             items_page = paginator.get_page(page)
 
-            result = [{
-                'id'            : item.id,
-                'name'          : item.name,
-                'price'         : item.price,
-                'quantity'      : item.quantity,
-                'image_url'     : item.image_url,
-                'created_at'    : item.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at'   : item.modified_at.strftime('%Y-%m-%d %H:%M:%S')
-            } for item in items_page]
+            result = []
+            for item in items_page:
+                image_url = item.image.url if item.image else None
+                result.append({
+                    'id'            : item.id,
+                    'name'          : item.name,
+                    'price'         : item.price,
+                    'quantity'      : item.quantity,
+                    'image_url'     : image_url,
+                    'created_at'    : item.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at'   : item.modified_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
 
             cache.set(cache_key, result, timeout=600)
 
@@ -68,62 +73,77 @@ class ItemView(View):
     @authorization
     def post(self, request):
         try:
-            data  = json.loads(request.body)
+            category_id = request.POST['category_id']
+            name        = request.POST['name']
+            price       = request.POST['price']
+            quantity    = request.POST['quantity']
+            image_file  = request.FILES.get('image')
 
-            category_id = data['category_id']
-            name        = data['name']
-            price       = data['price']
-            quantity    = data['quantity']
-            image_url   = data['image_url']
+            if not name or not price or not quantity:
+                return JsonResponse({'ERROR': 'EMPTY_VALUE'}, status=400)
 
             category = Category.objects.get(id=category_id)
 
             if Item.objects.filter(name=name).exists():
-                return JsonResponse({'ERROR': 'Item already exist'}, status=400)
+                return JsonResponse({'ERROR': 'ITEM_ALREADY_EXISTS'}, status=400)
 
             Item.objects.create(
                 category    = category,
                 name        = name,
                 price       = price,
                 quantity    = quantity,
-                image_url   = image_url,
+                image       = image_file,
             )
 
-            return JsonResponse({'MESSAGE': 'Created'}, status=201)
+            try:
+                cache.incr('item_list_version')
+            except ValueError:
+                cache.set('item_list_version', 1)
+
+            return JsonResponse({'MESSAGE': 'CREATED'}, status=201)
 
         except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
+            return JsonResponse({'ERROR': e.message}, status=400)
 
         except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
     @authorization
-    def patch(self, request):
+    def patch(self, request, item_id):
         try:
-            data = json.loads(request.body)
-            item_id = data['id']
+            item_id = item_id
 
             with transaction.atomic():
-                item = Item.objects.select_for_update().get(id=item_id)
+                item = Item.objects.select_for_update(nowait=True).get(id=item_id)
 
-                update_fields = ['name', 'price', 'quantity', 'image_url']
+                update_fields = ['name', 'price', 'quantity']
                 fields_to_save = []
 
                 updated_data_exists = False
 
                 for field in update_fields:
-                    if field in data:
-                        setattr(item, field, data[field])
+                    val = request.POST.get(field)
+                    if val is not None:
+                        setattr(item, field, val)
                         fields_to_save.append(field)
                         updated_data_exists = True
 
+                image_file = request.FILES.get('image')
+                if image_file:
+                    item.image = image_file
+                    fields_to_save.append('image')
+                    updated_data_exists = True
+
                 if updated_data_exists:
                     item.save(update_fields=fields_to_save)
-                    cache.clear()
+                    cache.incr('item_list_version')
 
                     return JsonResponse({'MESSAGE': 'UPDATED'}, status=200)
 
-            return JsonResponse({'MESSAGE': 'NO CHANGES WERE MADE'}, status=200)
+            return JsonResponse({'MESSAGE': 'NO_CHANGES_WERE_MADE'}, status=200)
+
+        except DatabaseError as e:
+            return JsonResponse({'ERROR': 'ITEM_UNDER_MODIFICATION'}, status=409)
 
         except ValidationError as e:
             return JsonResponse({'ERROR': e.message}, status=400)
