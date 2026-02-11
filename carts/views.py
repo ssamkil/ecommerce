@@ -25,7 +25,7 @@ class CartView(View):
                 'name' : cart.item.name,
                 'price' : cart.item.price,
                 'quantity' : cart.quantity,
-                'image_url' : cart.item.image_url,
+                'image' : cart.item.image,
             } for cart in carts]
 
             price_total = carts.aggregate(price_total=Sum(F('item__price') * F('quantity')))

@@ -62,24 +62,22 @@ class OrderView(View):
                         ))
 
                     Cart.objects.filter(user=user).delete()
-
                     OrderItem.objects.bulk_create(order_items)
-
-                    order.order_status_id = OrderStatus.Status.COMPLETED
+                    # order.order_status_id = OrderStatus.Status.COMPLETED
                     order.save()
 
-                    return JsonResponse({'MESSAGE': 'Created'}, status=201)
+                    return JsonResponse({'MESSAGE': 'ORDER_RESERVED'}, status=201)
 
             except DatabaseError as e:
-                return JsonResponse({'ERROR': 'ITEM CURRENTLY UNDER MODIFICATION'}, status=409)
+                return JsonResponse({'ERROR': 'ITEM_UNDER_MODIFICATION'}, status=409)
 
             except Exception as e:
                 order.order_status_id = OrderStatus.Status.DECLINED
                 order.save()
-                return JsonResponse({'ERROR' : str(e)}, status=400)
+                return JsonResponse({'ERROR': str(e)}, status=400)
 
         except (IntegrityError, ValidationError, KeyError, ValueError) as e:
-            return JsonResponse({'ERROR' : str(e)}, status=400)
+            return JsonResponse({'ERROR': str(e)}, status=400)
 
     @authorization
     def get(self, request, order_id):

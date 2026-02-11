@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 from my_settings        import DATABASES, SECRET_KEY
 from pathlib            import Path
-from celery.schedules   import crontab
+from datetime           import timedelta
 
 import pymysql, os
 
@@ -233,3 +233,9 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Seoul'
+CELERY_BEAT_SCHEDULE = {
+    'terminate_expired_orders':{
+        'task': 'orders.tasks.terminate_expired_orders',
+        'schedule': timedelta(minutes=5)
+    }
+}
