@@ -11,7 +11,7 @@ from django.db                  import transaction, DatabaseError
 from .models                    import Item, Category, Review
 from core.utils                 import authorization
 
-# Create your views here.
+
 class ItemView(View):
     def get(self, request):
         try:

@@ -9,11 +9,15 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from my_settings        import DATABASES, SECRET_KEY
-from pathlib            import Path
-from datetime           import timedelta
+import pymysql, os, sentry_sdk, logging
 
-import pymysql, os
+from my_settings                        import DATABASES, SECRET_KEY
+from pathlib                            import Path
+from datetime                           import timedelta
+from sentry_sdk.integrations.django     import DjangoIntegration
+from sentry_sdk.integrations.celery     import CeleryIntegration
+from sentry_sdk.integrations.logging    import LoggingIntegration
+
 
 pymysql.install_as_MySQLdb()
 
@@ -239,3 +243,19 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(minutes=5)
     }
 }
+sentry_logging = LoggingIntegration(
+    level=logging.INFO,
+    event_level=logging.ERROR
+)
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration(),
+        sentry_logging
+    ],
+    traces_sample_rate=1.0,
+    enable_tracing=True,
+    send_default_pii=True
+)

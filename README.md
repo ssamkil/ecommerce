@@ -25,6 +25,6 @@
     - 주문시 장바구니 상품들을 주문 db로 옮긴 후 장바구니 초기화
 ***
 > ### 기술 스택
-  * Python, Django, MySQL, jwt, Docker, Git, Trello
+  * Python, Django, PostgreSQL, JWT, Docker, Git, Trello
 > ### 그 외
   * 테스트코드 작성으로 기능 별 오류 유무 재차 확인
