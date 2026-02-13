@@ -14,8 +14,13 @@ jobs:
 
       - name: Create my_settings.py and .env
         run: |
-          echo "${{ secrets.MY_SETTINGS }}" > my_settings.py
-          echo "${{ secrets.ENV_FILE }}" > .env
+          cat <<EOF > my_settings.py
+          ${{ secrets.MY_SETTINGS }}
+          EOF
+          
+          cat <<EOF > .env
+          ${{ secrets.ENV_FILE }}
+          EOF
 
       - name: Build and Run Tests
         run: |
