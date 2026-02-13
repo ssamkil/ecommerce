@@ -15,87 +15,80 @@ class CartView(View):
         try:
             user = request.user
 
-            if not Cart.objects.filter(user_id=user.id).exists():
-                return JsonResponse({'ERROR' : 'Cart does not exist'}, status=400)
-
             carts = Cart.objects.filter(user=user).select_related('item')
 
+            if not carts.exists():
+                return JsonResponse({'ERROR': 'CART_DOES_NOT_EXIST'}, status=400)
+
             cart_total = [{
-                'cart_id' : cart.id,
-                'name' : cart.item.name,
-                'price' : cart.item.price,
-                'quantity' : cart.quantity,
-                'image' : cart.item.image,
+                'cart_id': cart.id,
+                'name': cart.item.name,
+                'price': cart.item.price,
+                'quantity': cart.quantity,
+                'image': cart.item.image.url if cart.item.image else None,
             } for cart in carts]
 
-            price_total = carts.aggregate(price_total=Sum(F('item__price') * F('quantity')))
+            price_total = carts.aggregate(total=Sum(F('item__price') * F('quantity')))
+            total_price = price_total['total'] if price_total['total'] else 0
 
-            return JsonResponse({'MESSAGE' : 'SUCCESS', 'RESULT' : cart_total, 'PRICE_TOTAL' : price_total}, status=200)
+            return JsonResponse({'MESSAGE': 'SUCCESS', 'RESULT': cart_total, 'TOTAL_PRICE': total_price}, status=200)
 
         except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
+            return JsonResponse({'ERROR': e.message}, status=400)
 
         except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
     @authorization
     def post(self, request):
         try:
             data = json.loads(request.body)
-
             user = request.user
-            user_id = user.id
 
             item_id = data['id']
-            quantity = data['quantity']
+            quantity = int(data['quantity'])
 
-            if not Item.objects.filter(id=item_id):
-                return JsonResponse({'ERROR' : 'Item does not exist'}, status=400)
+            try:
+                item = Item.objects.get(id=item_id)
+            except Item.DoesNotExist:
+                return JsonResponse({'ERROR': 'ITEM_DOES_NOT_EXIST'}, status=404)
 
             if quantity > Item.objects.get(id=item_id).quantity:
-                return JsonResponse({'ERROR' : 'Item stock unavailable'}, status=400)
+                return JsonResponse({'ERROR': 'ITEM_STOCK_UNAVAILABLE'}, status=400)
 
             cart, created = Cart.objects.get_or_create(
-                user_id = user_id,
-                item_id = item_id,
-                defaults = {'quantity' : quantity}
+                user     = user,
+                item     = item,
+                defaults = {'quantity': quantity}
             )
 
             if not created:
                 cart.quantity += quantity
                 cart.save()
-                return JsonResponse({'MESSAGE' : 'Updated'}, status=200)
+                return JsonResponse({'MESSAGE': 'UPDATED'}, status=200)
 
-            return JsonResponse({'MESSAGE' : 'Created'}, status=201)
+            return JsonResponse({'MESSAGE': 'CREATED'}, status=201)
 
         except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
+            return JsonResponse({'ERROR': e.message}, status=400)
 
         except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
     @authorization
     def delete(self, request):
         try:
             data = json.loads(request.body)
-
             user = request.user
-
             cart_id = data['id']
 
-            if not Cart.objects.filter(id=cart_id).exists():
-                return JsonResponse({'ERROR' : 'Cart does not exist'}, status=400)
-
-            cart = Cart.objects.get(
-                id=cart_id,
-                user__id=user.id
-            )
+            cart = Cart.objects.get(id=cart_id, user=user)
             cart.delete()
 
-            return JsonResponse({'MESSAGE' : 'Deleted'}, status=200)
+            return JsonResponse({'MESSAGE': 'DELETED'}, status=200)
 
-        except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
+        except Cart.DoesNotExist:
+            return JsonResponse({'ERROR': 'CART_DOES_NOT_EXIST'}, status=404)
 
         except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)

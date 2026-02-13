@@ -1,7 +1,7 @@
-import json, jwt
+import jwt
 
-from django.utils import timezone
-from django.test  import TestCase, Client
+from django.test                    import TestCase, Client
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from my_settings  import SECRET_KEY, ALGORITHM
 from items.models import Item, Category
@@ -17,20 +17,21 @@ class ItemViewTest(TestCase):
             password='123456789!@',
         )
 
-        Category.objects.create(
+        self.category = Category.objects.create(
             name='test_category',
             thumbnail=''
         )
 
-        Item.objects.create(
+        self.item = Item.objects.create(
             category=self.category,
             name=self.name,
             price=99,
             quantity=100,
-            image=''
+            image='test.jpg'
         )
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
+        headers = {'HTTP_Authorization': self.token}
 
     def test_itemview_get_success(self):
         response = self.client.get(f'/items?name={self.name}')
@@ -38,55 +39,71 @@ class ItemViewTest(TestCase):
 
         result_json = response.json()
         result_data = result_json['RESULT']
+        item        = result_data[0]
 
-        self.assertIn('created_at', result_data)
-        self.assertIn('modified_at', result_data)
+        self.assertIn('created_at', item)
+        self.assertIn('modified_at', item)
 
-        self.assertEqual(result_data['name'], self.name)
-        self.assertEqual(result_data['price'], 99.0)
-        self.assertEqual(result_data['category'], self.category.id)
+        self.assertEqual(item['name'], self.name)
+        self.assertEqual(item['price'], 99.0)
+        self.assertEqual(item['category_id'], self.category.id)
 
     def test_create_success(self):
-        headers = {'HTTP_Authorization' : self.token}
-        post = {
+        image = SimpleUploadedFile("new_image.jpg", b"file_content", content_type="image/jpeg")
+
+        data = {
             'category_id': self.category.id,
             'name': 'test_item2',
             'price': 75,
             'quantity': 40,
-            'image': ''
+            'image': image
         }
+
         response = self.client.post(
-            '/items', json.dumps(post), content_type="application/json", **headers
+            '/items', data, **self.headers
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json(), {'MESSAGE': 'Created'})
+        self.assertEqual(response.json(), {'MESSAGE': 'CREATED'})
 
     def test_duplicate_item(self):
-        headers = {'HTTP_Authorization': self.token}
         post = {
             'category_id': self.category.id,
-            'name': 'test_item',
+            'name': self.name,
             'price': 100,
             'quantity': 55,
             'image': ''
         }
         response = self.client.post(
-            '/items', post, content_type="application/json", **headers
+            '/items', post, **self.headers
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {'ERROR' : 'Item already exist'})
+        self.assertEqual(response.json(), {'ERROR': 'ITEM_ALREADY_EXISTS'})
 
     def test_key_error(self):
-        headers = {'HTTP_Authorization' : self.token}
         post = {
             'name': 'test_item2',
             'price': 35
         }
         response = self.client.post(
-            '/items', json.dumps(post), content_type="application/json", **headers
+            '/items', post, **self.headers
         )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'ERROR': 'KEY_ERROR'})
+
+    def test_empty_value(self):
+        post = {
+            'category_id': self.category.id,
+            'name': '',
+            'price': 100,
+            'quantity': 10
+        }
+
+        response = self.client.post(
+            '/items', post, **self.headers
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'ERROR': 'EMPTY_VALUE'})

@@ -29,27 +29,26 @@ class PostViewTest(TestCase):
         )
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
+        headers = {'HTTP_Authorization': self.token}
 
     def test_create_success(self):
-        headers = {'HTTP_Authorization' : self.token}
         post = {
             'title': 'Test for post2',
             'body': 'hello this is test code for post view heuh heuh heuh',
         }
         response = self.client.post(
-            '/posts', post, content_type="application/json", **headers
+            '/posts', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json(), {'MESSAGE': 'CREATED'})
 
     def test_key_error(self):
-        headers = {'HTTP_Authorization' : self.token}
         post = {
             'title':'Test for post',
         }
         response = self.client.post(
-            '/posts', post, content_type="application/json", **headers
+            '/posts', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 400)
