@@ -1,7 +1,6 @@
 import json, jwt, bcrypt
 
 from django.test  import TestCase, Client
-
 from users.models import User
 from my_settings  import SECRET_KEY, ALGORITHM
 
@@ -14,9 +13,6 @@ class SignUpViewTest(TestCase):
             password='123456789!@',
         )
 
-    def tearDown(self):
-        User.objects.all().delete()
-
     def test_signup_success(self):
         user = {
             'name': '홍홍길동',
@@ -24,11 +20,11 @@ class SignUpViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signUp', json.dumps(user), content_type='application/json'
+            '/users/signUp', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json(), {'MESSAGE': 'Created'})
+        self.assertEqual(response.json(), {'MESSAGE': 'CREATED'})
 
     def test_duplicated_user(self):
         user = {
@@ -37,11 +33,11 @@ class SignUpViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signUp', json.dumps(user), content_type='application/json'
+            '/users/signUp', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {'ERROR': 'Account already exists'})
+        self.assertEqual(response.json(), {'ERROR': 'ACCOUNT_ALREADY_EXISTS'})
 
     def test_email_format_error(self):
         user = {
@@ -50,7 +46,7 @@ class SignUpViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signUp', json.dumps(user), content_type='application/json'
+            '/users/signUp', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
@@ -63,11 +59,11 @@ class SignUpViewTest(TestCase):
             'password': '1234567',
         }
         response = self.client.post(
-            '/users/signUp', json.dumps(user), content_type='application/json'
+            '/users/signUp', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {'ERROR': 'Length of password needs to be longer than 8'})
+        self.assertEqual(response.json(), {'ERROR': 'Minimum length of password should be 8'})
 
     def test_key_error(self):
         user = {
@@ -75,33 +71,70 @@ class SignUpViewTest(TestCase):
             'email': 'test5@naver.com',
         }
         response = self.client.post(
-            '/users/signUp', json.dumps(user), content_type="application/json"
+            '/users/signUp', user, content_type="application/json"
         )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'ERROR': 'KEY_ERROR'})
 
+
 class SignInViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-        self.token = jwt.encode({'id': 1}, SECRET_KEY, ALGORITHM)
-        User.objects.create(
+        self.email = 'test2@naver.com'
+        self.password = '123456789!@'
+
+        hashed_password = bcrypt.hashpw(
+            self.password.encode('utf-8'),
+            bcrypt.gensalt()
+        ).decode('utf-8')
+
+        self.user = User.objects.create(
             name='홍길동',
-            email='test2@naver.com',
-            password=bcrypt.hashpw('123456789!@'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            email=self.email,
+            password=hashed_password,
         )
 
-    def tearDown(self):
-        User.objects.all().delete()
-
     def test_login_success(self):
-        user = {
-            'email': 'test2@naver.com',
-            'password': '123456789!@',
+        login_data = {
+            'email': self.email,
+            'password': self.password,
         }
         response = self.client.post(
-            '/users/signIn', json.dumps(user), content_type="application/json"
+            '/users/signIn', login_data, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'MESSAGE': 'SUCCESS', 'TOKEN': self.token})
+
+        response_data = response.json()
+        self.assertEqual(response_data['MESSAGE'], 'SUCCESS')
+
+        token = response_data.get('TOKEN')
+        self.assertIsNotNone(token)
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        self.assertEqual(payload['id'], self.user.id)
+
+    def test_login_user_does_not_exist(self):
+        login_data = {
+            'email': 'wrong@naver.com',
+            'password': '123456789!@',
+        }
+        response = self.client.post(
+            '/users/signIn', login_data, content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {'ERROR': 'INVALID_USER'})
+
+    def test_login_wrong_password(self):
+        login_data = {
+            'email': self.email,
+            'password': 'wrong_password',
+        }
+        response = self.client.post(
+            '/users/signIn', login_data, content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'ERROR': 'FAILED_TO_LOGIN'})

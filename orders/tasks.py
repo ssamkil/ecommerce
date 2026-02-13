@@ -6,8 +6,6 @@ from .models import Order, OrderItem, OrderStatus
 
 @shared_task
 def terminate_expired_orders():
-    raise ValueError("Celery Sentry Test")
-
     limit_time = timezone.now() - timedelta(minutes=60)
 
     expired_orders = Order.objects.filter(

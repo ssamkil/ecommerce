@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,7 +6,27 @@ on:
       - main
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create my_settings.py and .env
+        run: |
+          echo "${{ secrets.MY_SETTINGS }}" > my_settings.py
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Build and Run Tests
+        run: |
+          docker-compose up -d --build
+          docker-compose exec -T web python manage.py test
+
+      - name: Teardown
+        run: docker-compose down
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: SSH into EC2 and Deploy
@@ -17,7 +37,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/ecommerce
-            git pull origin main
+            git pull -u origin main
+
             docker-compose down
             docker-compose up -d --build
             docker system prune -f

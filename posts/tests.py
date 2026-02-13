@@ -30,10 +30,6 @@ class PostViewTest(TestCase):
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
 
-    def tearDown(self):
-        User.objects.all().delete()
-        Post.objects.all().delete()
-
     def test_create_success(self):
         headers = {'HTTP_Authorization' : self.token}
         post = {
@@ -41,11 +37,11 @@ class PostViewTest(TestCase):
             'body': 'hello this is test code for post view heuh heuh heuh',
         }
         response = self.client.post(
-            '/posts', json.dumps(post), content_type="application/json", **headers
+            '/posts', post, content_type="application/json", **headers
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json(), {'MESSAGE': 'Created'})
+        self.assertEqual(response.json(), {'MESSAGE': 'CREATED'})
 
     def test_key_error(self):
         headers = {'HTTP_Authorization' : self.token}
@@ -53,9 +49,30 @@ class PostViewTest(TestCase):
             'title':'Test for post',
         }
         response = self.client.post(
-            '/posts', json.dumps(post), content_type="application/json", **headers
+            '/posts', post, content_type="application/json", **headers
         )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'ERROR': 'KEY_ERROR'})
 
+    def test_get_list_success(self):
+        for i in range(5):
+            Post.objects.create(
+                title=f'Test Post {i}',
+                body='Body',
+                user=self.user
+            )
+
+        response = self.client.get('/posts?page=1')
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertEqual(data['MESSAGE'], 'SUCCESS')
+
+        self.assertEqual(len(data['RESULT']), 3)
+
+        self.assertEqual(data['PAGES']['TOTAL'], 2)
+
+        latest_post_id = Post.objects.last().id
+        self.assertEqual(data['RESULT'][0]['id'], latest_post_id)

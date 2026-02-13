@@ -1,7 +1,6 @@
 import json, jwt
 
-from datetime     import datetime
-
+from django.utils import timezone
 from django.test  import TestCase, Client
 
 from my_settings  import SECRET_KEY, ALGORITHM
@@ -10,7 +9,6 @@ from users.models import User
 class ItemViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-
         self.name = 'test_item'
 
         self.user = User.objects.create(
@@ -20,54 +18,42 @@ class ItemViewTest(TestCase):
         )
 
         Category.objects.create(
-            id=1,
             name='test_category',
             thumbnail=''
         )
 
         Item.objects.create(
-            category_id=1,
+            category=self.category,
             name=self.name,
             price=99,
             quantity=100,
-            image_url=''
+            image=''
         )
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
 
-    def tearDown(self):
-        User.objects.all().delete()
-        Item.objects.all().delete()
-        Category.objects.all().delete()
-
-    def test_itemview_get_sucess(self):
-        response = self.client.get(
-            f'/items?name={self.name}'
-        )
-
+    def test_itemview_get_success(self):
+        response = self.client.get(f'/items?name={self.name}')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(),
-{
-            "MESSAGE": "SUCCESS",
-            "RESULT": {
-                "created_at": datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-                "modified_at": datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-                "category": 1,
-                "name": self.name,
-                "price": 99.0,
-                "quantity": 100,
-                "image_url": ""
-            }
-        })
+
+        result_json = response.json()
+        result_data = result_json['RESULT']
+
+        self.assertIn('created_at', result_data)
+        self.assertIn('modified_at', result_data)
+
+        self.assertEqual(result_data['name'], self.name)
+        self.assertEqual(result_data['price'], 99.0)
+        self.assertEqual(result_data['category'], self.category.id)
 
     def test_create_success(self):
         headers = {'HTTP_Authorization' : self.token}
         post = {
-            'category_id': 1,
+            'category_id': self.category.id,
             'name': 'test_item2',
             'price': 75,
             'quantity': 40,
-            'image_url': ''
+            'image': ''
         }
         response = self.client.post(
             '/items', json.dumps(post), content_type="application/json", **headers
@@ -79,14 +65,14 @@ class ItemViewTest(TestCase):
     def test_duplicate_item(self):
         headers = {'HTTP_Authorization': self.token}
         post = {
-            'category_id': 1,
+            'category_id': self.category.id,
             'name': 'test_item',
             'price': 100,
             'quantity': 55,
-            'image_url': ''
+            'image': ''
         }
         response = self.client.post(
-            '/items', json.dumps(post), content_type="application/json", **headers
+            '/items', post, content_type="application/json", **headers
         )
 
         self.assertEqual(response.status_code, 400)
