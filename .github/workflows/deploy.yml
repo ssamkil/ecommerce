@@ -24,11 +24,11 @@ jobs:
 
       - name: Build and Run Tests
         run: |
-          docker-compose up -d --build
-          docker-compose exec -T web python manage.py test
+          docker compose up -d --build
+          docker compose exec -T web python manage.py test
 
       - name: Teardown
-        run: docker-compose down
+        run: docker compose down
 
   deploy:
     needs: test
@@ -44,6 +44,6 @@ jobs:
             cd /home/ubuntu/ecommerce
             git pull -u origin main
 
-            docker-compose down
-            docker-compose up -d --build
+            docker compose down
+            docker compose up -d --build
             docker system prune -f
