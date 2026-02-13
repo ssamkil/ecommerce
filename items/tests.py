@@ -31,7 +31,7 @@ class ItemViewTest(TestCase):
         )
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
-        headers = {'HTTP_Authorization': self.token}
+        self.headers = {'HTTP_Authorization': self.token}
 
     def test_itemview_get_success(self):
         response = self.client.get(f'/items?name={self.name}')

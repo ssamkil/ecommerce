@@ -29,7 +29,7 @@ class PostViewTest(TestCase):
         )
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
-        headers = {'HTTP_Authorization': self.token}
+        self.headers = {'HTTP_Authorization': self.token}
 
     def test_create_success(self):
         post = {
