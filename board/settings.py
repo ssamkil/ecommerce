@@ -32,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'carts',
     'comments',
     'orders',
+    'rest_framework',
+    'drf_yasg',
     # allauth
     'django.contrib.sites',
     'allauth',
@@ -134,7 +136,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Image files
 
@@ -199,7 +206,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SITE_ID = 1
-LOGIN_REDIRECT_URL = '/users'
+LOGIN_REDIRECT_URL = '/swagger/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/users'
 ACCOUNT_LOGOUT_ON_GET = True
 

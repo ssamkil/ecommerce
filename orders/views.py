@@ -6,12 +6,12 @@ from .models                import Order, OrderItem, OrderStatus
 from items.models           import Item
 
 from django.http            import JsonResponse
-from django.views           import View
 from django.db              import transaction, IntegrityError, DatabaseError
 from django.db.models       import F, Sum
 from django.core.exceptions import ValidationError
+from rest_framework.views   import APIView
 
-class OrderView(View):
+class OrderView(APIView):
     @authorization
     def post(self, request):
         try:

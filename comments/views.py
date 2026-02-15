@@ -1,8 +1,8 @@
 import json
 
-from django.views   import View
 from django.http                import JsonResponse
 from django.core.exceptions     import ValidationError
+from rest_framework.views       import APIView
 
 from posts.models import Post
 from .models        import Comment
@@ -22,7 +22,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
         return []
 
-class CommentView(View):
+class CommentView(APIView):
     def get(self, request, post_id):
         try:
             parent_comments = Comment.objects.filter(post_id=post_id, parent=None).prefetch_related('replies')

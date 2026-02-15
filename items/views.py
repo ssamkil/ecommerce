@@ -1,18 +1,18 @@
 import json
 
-from django.views               import View
 from django.http                import JsonResponse
 from django.core.cache          import cache
 from django.core.exceptions     import ValidationError
 from django.core.serializers    import serialize
 from django.core.paginator      import Paginator
 from django.db                  import transaction, DatabaseError
+from rest_framework.views       import APIView
 
 from .models                    import Item, Category, Review
 from core.utils                 import authorization
 
 
-class ItemView(View):
+class ItemView(APIView):
     def get(self, request):
         try:
             name = request.GET.get('name', None)
@@ -169,7 +169,7 @@ class ItemView(View):
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
-class SearchItemView(View):
+class SearchItemView(APIView):
     def get(self, request):
         try:
             item_name = request.GET.get('name', None)
@@ -187,7 +187,7 @@ class SearchItemView(View):
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
-class ReviewView(View):
+class ReviewView(APIView):
     def get(self, request):
         try:
             item_name = request.GET.get('name', None)

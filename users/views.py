@@ -2,10 +2,10 @@ import json, jwt, bcrypt, os, requests
 
 from dotenv                          import load_dotenv
 
-from django.views                    import View
 from django.http                     import JsonResponse
 from django.core.exceptions          import ValidationError
 from django.shortcuts                import render, redirect
+from rest_framework.views            import APIView
 
 from .models                         import User
 from .validators                     import Validator
@@ -75,7 +75,7 @@ def kakao_callback(request):
 def index(request):
     return render(request, 'user/index.html', {})
 
-class SignUpView(View):
+class SignUpView(APIView):
     def post(self, request):
         try:
             data     = json.loads(request.body)
@@ -106,7 +106,7 @@ class SignUpView(View):
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
-class SignInView(View):
+class SignInView(APIView):
     def post(self, request):
         try:
             data            = json.loads(request.body)

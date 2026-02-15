@@ -1,16 +1,22 @@
 import json
 
 from django.http            import JsonResponse
-from django.views           import View
 from django.core.exceptions import ValidationError
 from django.db.models       import F, Sum
+from rest_framework.views   import APIView
+from drf_yasg.utils import swagger_auto_schema
 
 from core.utils             import authorization
 from .models                import Cart
 from items.models           import Item
 
-class CartView(View):
+class CartView(APIView):
+    """
+    장바구니 관리 API
+    - 장바구니 담기, 조회, 수량 수정, 삭제 기능을 제공합니다.
+    """
     @authorization
+    @swagger_auto_schema(operation_description="장바구니에 담긴 상품 목록을 불러옵니다.")
     def get(self, request):
         try:
             user = request.user
@@ -40,7 +46,12 @@ class CartView(View):
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
     @authorization
+    @swagger_auto_schema(operation_description="상품을 장바구니에 추가합니다.")
     def post(self, request):
+        """
+        상품을 장바구니에 추가합니다.
+        - 동일한 상품이 이미 있을 경우 수량만 증가시킵니다.
+        """
         try:
             data = json.loads(request.body)
             user = request.user

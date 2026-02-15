@@ -1,13 +1,12 @@
 import json, math
 
-from django.views               import View
 from django.http                import JsonResponse
-from django.core.exceptions     import ValidationError
+from rest_framework.views       import APIView
 
 from .models                    import Post
 from core.utils                 import authorization
 
-class PostView(View):
+class PostView(APIView):
     def get(self, request):
         post_id = request.GET.get('id')
         if post_id:
