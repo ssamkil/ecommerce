@@ -40,10 +40,10 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 60m
           script: |
             cd /home/ubuntu/ecommerce
             git pull origin main
-
             docker-compose down
             docker-compose up -d --build
             docker system prune -f
