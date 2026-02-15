@@ -411,3 +411,4 @@ $RECYCLE.BIN/
 
 my_settings.py
 .env
+staticfiles/
