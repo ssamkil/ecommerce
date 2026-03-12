@@ -1,8 +1,9 @@
-from django.db import transaction
-from django.utils import timezone
-from datetime import timedelta
-from celery import shared_task
-from .models import Order, OrderItem, OrderStatus
+from django.db        import transaction
+from django.db.models import F
+from django.utils     import timezone
+from datetime         import timedelta
+from celery           import shared_task
+from .models          import Order, OrderItem, OrderStatus
 
 @shared_task
 def terminate_expired_orders():
@@ -17,9 +18,8 @@ def terminate_expired_orders():
         with transaction.atomic():
             order_items = OrderItem.objects.filter(order=order).select_related('item')
             for order_item in order_items:
-                item = order_item.item
-                item.quantity += order_item.quantity
-                item.save()
+                order_item.item.quantity = F('quantity') + order_item.quantity
+                order_item.item.save(update_fields=['quantity'])
 
             order.order_status_id = OrderStatus.Status.DECLINED
             order.save()
