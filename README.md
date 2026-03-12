@@ -2,7 +2,8 @@
 ## e-commerce 사이트 주요 REST API 기능 구현
 ***
 > ### ERD
-![Cap 2023-11-09 09-37-54-595](https://github.com/ssamkil/ecommerce/assets/10840728/76641d78-ea34-4f9c-a473-976bbfaeff6d)
+<img width="1323" height="1218" alt="Untitled" src="https://github.com/user-attachments/assets/3ed9d188-73af-40c2-82ef-b934471e4c50" />
+
 ***
 > ### 기능 구현
   1. 유저
