@@ -15,8 +15,8 @@ class CartView(APIView):
     장바구니 관리 API
     - 장바구니 담기, 조회, 수량 수정, 삭제 기능을 제공합니다.
     """
-    @authorization
     @swagger_auto_schema(operation_description="장바구니에 담긴 상품 목록을 불러옵니다.")
+    @authorization
     def get(self, request):
         try:
             user = request.user
@@ -45,8 +45,8 @@ class CartView(APIView):
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
-    @authorization
     @swagger_auto_schema(operation_description="상품을 장바구니에 추가합니다.")
+    @authorization
     def post(self, request):
         """
         상품을 장바구니에 추가합니다.
@@ -64,7 +64,7 @@ class CartView(APIView):
             except Item.DoesNotExist:
                 return JsonResponse({'ERROR': 'ITEM_DOES_NOT_EXIST'}, status=404)
 
-            if quantity > Item.objects.get(id=item_id).quantity:
+            if quantity > item.quantity:
                 return JsonResponse({'ERROR': 'ITEM_STOCK_UNAVAILABLE'}, status=400)
 
             cart, created = Cart.objects.get_or_create(
