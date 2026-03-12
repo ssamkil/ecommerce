@@ -18,6 +18,8 @@ services:
             - .:/app
             - static_volume:/app/staticfiles
             - media_volume:/app/media
+        ports:
+            - "8089:8089"
         expose:
             - "8000"
         environment:

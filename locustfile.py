@@ -26,4 +26,4 @@ class FakeUsers(HttpUser):
 
     @task(1)
     def stress_test_heavy_query(self):
-        self.client.get("/items/?name=ThisIsNeverExistProduct", name="/items/?name=[empty]")
+        self.client.get("/items?name=ThisIsNeverExistProduct", name="/items?name=[empty]")

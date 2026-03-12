@@ -25,21 +25,15 @@ class ItemView(APIView):
             else:
                 cache_key = f"item_list:{global_version}:total:page:{page}"
 
-            #cached_result = cache.get(cache_key)
+            cached_result = cache.get(cache_key)
 
-            #if cached_result:
-            #    return JsonResponse({'MESSAGE': 'SUCCESS (CACHE)', 'RESULT': cached_result}, status=200)
+            if cached_result:
+                return JsonResponse({'MESSAGE': 'SUCCESS (CACHE)', 'RESULT': cached_result}, status=200)
 
             if name:
-                items = Item.objects.filter(name__icontains=name).order_by('-created_at')
+                items = Item.objects.filter(name__icontains=name).select_related('category').order_by('-created_at')
             else:
-                items = Item.objects.all().order_by('-created_at')
-
-            #if name:
-            #    # select_related('category') 추가
-            #    items = Item.objects.filter(name__icontains=name).select_related('category').order_by('-created_at')
-            #else:
-            #    items = Item.objects.all().select_related('category').order_by('-created_at')
+                items = Item.objects.all().select_related('category').order_by('-created_at')
 
             paginator = Paginator(items, 20)
             items_page = paginator.get_page(page)
