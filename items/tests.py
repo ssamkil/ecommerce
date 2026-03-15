@@ -2,7 +2,6 @@ import json
 import jwt
 from django.test import TestCase, Client
 from django.core.cache import cache
-
 from my_settings import SECRET_KEY, ALGORITHM
 from items.models import Item, Category, Review
 from users.models import User
