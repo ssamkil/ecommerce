@@ -68,6 +68,11 @@ class OrderView(APIView):
 
                     return JsonResponse({'MESSAGE': 'ORDER_RESERVED'}, status=201)
 
+            except IntegrityError as e:
+                order.order_status_id = OrderStatus.Status.DECLINED
+                order.save()
+                return JsonResponse({'ERROR': str(e)}, status=400)
+
             except DatabaseError as e:
                 return JsonResponse({'ERROR': 'ITEM_UNDER_MODIFICATION'}, status=409)
 
