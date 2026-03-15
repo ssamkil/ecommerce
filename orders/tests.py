@@ -25,9 +25,9 @@ class OrderTest(TestCase):
             category=self.category
         )
 
-        OrderStatus.objects.create(id=1, status='PENDING')
-        OrderStatus.objects.create(id=2, status='COMPLETED')
-        OrderStatus.objects.create(id=3, status='DECLINED')
+        OrderStatus.objects.get_or_create(id=1, status='PENDING')
+        OrderStatus.objects.get_or_create(id=2, status='COMPLETED')
+        OrderStatus.objects.get_or_create(id=3, status='DECLINED')
 
         self.token = jwt.encode({'id': self.user.id}, SECRET_KEY, ALGORITHM)
         self.headers = {'HTTP_AUTHORIZATION': self.token}
