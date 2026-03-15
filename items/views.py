@@ -136,7 +136,10 @@ class ItemView(APIView):
 
                 if updated_data_exists:
                     item.save(update_fields=fields_to_save)
-                    cache.incr('item_list_version')
+                    if cache.get('item_list_version') is None:
+                        cache.set('item_list_version', 1)
+                    else:
+                        cache.incr('item_list_version')
 
                     return JsonResponse({'MESSAGE': 'UPDATED'}, status=200)
 
@@ -151,22 +154,24 @@ class ItemView(APIView):
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
-    @authorization
     def delete(self, request, item_id):
         try:
             item = Item.objects.get(id=item_id)
+            item.delete()
 
-            if item:
-                item.delete()
+            try:
+                cache.incr('item_list_version')
+            except ValueError:
+                cache.set('item_list_version', 1)
 
-                return JsonResponse({'MESSAGE': 'DELETED'}, status=200)
+            return JsonResponse({'MESSAGE': 'DELETED'}, status=200)
 
-            else:
-                return JsonResponse({'ERROR': 'ITEM_DOES_NOT_EXIST'}, status=400)
+        except Item.DoesNotExist:
+            return JsonResponse({'ERROR': 'ITEM_DOES_NOT_EXIST'}, status=404)
 
         except ValidationError as e:
             return JsonResponse({'ERROR': e.message}, status=400)
-
+        
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 

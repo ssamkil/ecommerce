@@ -27,6 +27,8 @@ class ItemViewTest(TestCase):
         self.headers = {'HTTP_AUTHORIZATION': self.token}
         cache.clear()
 
+        cache.set('item_list_version', 1)
+
     def tearDown(self):
         cache.clear()
 
