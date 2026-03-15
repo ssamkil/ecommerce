@@ -122,7 +122,7 @@ class ItemView(APIView):
                 updated_data_exists = False
 
                 for field in update_fields:
-                    val = request.POST.get(field)
+                    val = request.data.get(field)
                     if val is not None:
                         setattr(item, field, val)
                         fields_to_save.append(field)
@@ -156,7 +156,7 @@ class ItemView(APIView):
         try:
             item = Item.objects.get(id=item_id)
 
-            if item.exists():
+            if item:
                 item.delete()
 
                 return JsonResponse({'MESSAGE': 'DELETED'}, status=200)
@@ -263,7 +263,7 @@ class ReviewView(APIView):
 
             review = Review.objects.filter(item__name=item_name, user=user)
 
-            if review.exists():
+            if review:
                 review.delete()
 
                 return JsonResponse({'MESSAGE': 'DELETED'}, status=200)

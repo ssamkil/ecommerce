@@ -48,7 +48,7 @@ class CartViewTest(TestCase):
 
     def test_get_cart_success(self):
         response = self.client.get(
-            '/carts', **self.headers
+            '/carts/', **self.headers
         )
 
         self.assertEqual(response.status_code, 200)
@@ -62,7 +62,7 @@ class CartViewTest(TestCase):
             'quantity': 50
         }
         response = self.client.post(
-            '/carts', post, content_type="application/json", **self.headers
+            '/carts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 201)
@@ -74,7 +74,7 @@ class CartViewTest(TestCase):
             'quantity': 50
         }
         response = self.client.post(
-            '/carts', post, content_type="application/json", **self.headers
+            '/carts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 200)
@@ -86,7 +86,7 @@ class CartViewTest(TestCase):
             'quantity': 50
         }
         response = self.client.post(
-            '/carts', post, content_type="application/json", **self.headers
+            '/carts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 404)
@@ -98,7 +98,7 @@ class CartViewTest(TestCase):
             'quantity': 500
         }
         response = self.client.post(
-            '/carts', post, content_type="application/json", **self.headers
+            '/carts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 400)
@@ -109,7 +109,7 @@ class CartViewTest(TestCase):
             'id': self.cart.id
         }
         response = self.client.delete(
-            '/carts', post, content_type='application/json', **self.headers
+            '/carts/', post, content_type='application/json', **self.headers
         )
 
         self.assertEqual(response.status_code, 200)
@@ -122,7 +122,7 @@ class CartViewTest(TestCase):
             'id': 99999
         }
         response = self.client.delete(
-            '/carts', post, content_type='application/json', **self.headers
+            '/carts/', post, content_type='application/json', **self.headers
         )
 
         self.assertEqual(response.status_code, 404)
@@ -133,7 +133,7 @@ class CartViewTest(TestCase):
             'id': self.item.id
         }
         response = self.client.post(
-            '/carts', post, content_type="application/json", **self.headers
+            '/carts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 400)

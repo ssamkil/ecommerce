@@ -37,7 +37,7 @@ class PostViewTest(TestCase):
             'body': 'hello this is test code for post view heuh heuh heuh',
         }
         response = self.client.post(
-            '/posts', post, content_type="application/json", **self.headers
+            '/posts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 201)
@@ -48,7 +48,7 @@ class PostViewTest(TestCase):
             'title':'Test for post',
         }
         response = self.client.post(
-            '/posts', post, content_type="application/json", **self.headers
+            '/posts/', post, content_type="application/json", **self.headers
         )
 
         self.assertEqual(response.status_code, 400)
@@ -62,7 +62,7 @@ class PostViewTest(TestCase):
                 user=self.user
             )
 
-        response = self.client.get('/posts?page=1')
+        response = self.client.get('/posts/?page=1')
 
         self.assertEqual(response.status_code, 200)
 

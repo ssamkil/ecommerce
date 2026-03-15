@@ -20,7 +20,7 @@ class SignUpViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signUp', user, content_type='application/json'
+            '/users/signUp/', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 201)
@@ -33,7 +33,7 @@ class SignUpViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signUp', user, content_type='application/json'
+            '/users/signUp/', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
@@ -46,7 +46,7 @@ class SignUpViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signUp', user, content_type='application/json'
+            '/users/signUp/', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
@@ -59,7 +59,7 @@ class SignUpViewTest(TestCase):
             'password': '1234567',
         }
         response = self.client.post(
-            '/users/signUp', user, content_type='application/json'
+            '/users/signUp/', user, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
@@ -71,7 +71,7 @@ class SignUpViewTest(TestCase):
             'email': 'test5@naver.com',
         }
         response = self.client.post(
-            '/users/signUp', user, content_type="application/json"
+            '/users/signUp/', user, content_type="application/json"
         )
 
         self.assertEqual(response.status_code, 400)
@@ -101,7 +101,7 @@ class SignInViewTest(TestCase):
             'password': self.password,
         }
         response = self.client.post(
-            '/users/signIn', login_data, content_type='application/json'
+            '/users/signIn/', login_data, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 200)
@@ -121,7 +121,7 @@ class SignInViewTest(TestCase):
             'password': '123456789!@',
         }
         response = self.client.post(
-            '/users/signIn', login_data, content_type='application/json'
+            '/users/signIn/', login_data, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 401)
@@ -133,7 +133,7 @@ class SignInViewTest(TestCase):
             'password': 'wrong_password',
         }
         response = self.client.post(
-            '/users/signIn', login_data, content_type='application/json'
+            '/users/signIn/', login_data, content_type='application/json'
         )
 
         self.assertEqual(response.status_code, 400)
