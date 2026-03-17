@@ -127,8 +127,11 @@ class ItemView(APIView):
 
             return JsonResponse({'MESSAGE': 'CREATED'}, status=201)
 
-        except (ValidationError, KeyError) as e:
-            return JsonResponse({'ERROR': str(e)}, status=400)
+        except ValidationError as e:
+            return JsonResponse({'ERROR': e.message}, status=400)
+
+        except KeyError:
+            return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
     @extend_schema(
         summary="상품 정보 수정",
