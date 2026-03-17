@@ -135,7 +135,7 @@ class ItemView(APIView):
 
     @extend_schema(
         summary="상품 정보 수정",
-        description="기존 상품 정보를 수정합니다. DB 락(select_for_update)을 통해 동시성 제어를 수행합니다.",
+        description="기존 상품 정보를 수정합니다. DB 락을 통해 동시성 제어를 수행합니다.",
         request={
             'multipart/form-data': {
                 'type': 'object',

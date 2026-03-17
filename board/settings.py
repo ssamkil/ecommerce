@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'comments',
     'orders',
     'rest_framework',
+    'drf_spectacular',
     'drf_yasg',
     # allauth
     'django.contrib.sites',
