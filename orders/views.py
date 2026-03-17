@@ -10,8 +10,31 @@ from django.db              import transaction, IntegrityError, DatabaseError
 from django.db.models       import F, Sum
 from django.core.exceptions import ValidationError
 from rest_framework.views   import APIView
+from drf_spectacular.utils  import extend_schema, OpenApiTypes, OpenApiResponse
 
 class OrderView(APIView):
+    """
+    주문 관리 API
+    """
+
+    @extend_schema(
+        summary="주문 생성",
+        description="장바구니의 상품들을 주문 처리합니다. 트랜잭션과 DB 락을 사용하여 재고 무결성을 보장합니다.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'address': {'type': 'string', 'description': '배송 주소'}
+                },
+                'required': ['address']
+            }
+        },
+        responses={
+            201: OpenApiResponse(description="주문 성공"),
+            400: OpenApiResponse(description="장바구니 비어있음 또는 재고 부족"),
+            409: OpenApiResponse(description="동시 주문으로 인한 일시적 충돌 (Retry 필요)")
+        }
+    )
     @authorization
     def post(self, request):
         try:
@@ -41,7 +64,7 @@ class OrderView(APIView):
                     cart_items = list(carts)
                     item_ids = [cart.item.id for cart in cart_items]
 
-                    locked_item = Item.objects.select_for_update(nowait=True).filter(id__in=item_ids)  # 데이터 잠금 - 여러명이 동시 주문시 문제 발생T
+                    locked_item = Item.objects.select_for_update(nowait=True).filter(id__in=item_ids)
                     item_map = {item.id: item for item in locked_item}
 
                     order_items = []
@@ -63,7 +86,6 @@ class OrderView(APIView):
 
                     Cart.objects.filter(user=user).delete()
                     OrderItem.objects.bulk_create(order_items)
-                    # order.order_status_id = OrderStatus.Status.COMPLETED
                     order.save()
 
                     return JsonResponse({'MESSAGE': 'ORDER_RESERVED'}, status=201)
@@ -73,7 +95,7 @@ class OrderView(APIView):
                 order.save()
                 return JsonResponse({'ERROR': str(e)}, status=400)
 
-            except DatabaseError as e:
+            except DatabaseError:
                 return JsonResponse({'ERROR': 'ITEM_UNDER_MODIFICATION'}, status=409)
 
             except Exception as e:
@@ -81,9 +103,17 @@ class OrderView(APIView):
                 order.save()
                 return JsonResponse({'ERROR': str(e)}, status=400)
 
-        except (IntegrityError, ValidationError, KeyError, ValueError) as e:
+        except (ValidationError, KeyError, ValueError) as e:
             return JsonResponse({'ERROR': str(e)}, status=400)
 
+    @extend_schema(
+        summary="주문 상세 조회",
+        description="특정 주문 번호에 대한 상세 내역과 총 결제 금액을 조회합니다.",
+        responses={
+            200: OpenApiResponse(description="조회 성공"),
+            404: OpenApiResponse(description="주문 내역 없음")
+        }
+    )
     @authorization
     def get(self, request, order_id):
         try:
@@ -122,8 +152,5 @@ class OrderView(APIView):
 
             return JsonResponse({'MESSAGE' : 'SUCCESS', 'RESULT' : result}, status=200)
 
-        except ValidationError as e:
-            return JsonResponse({'ERROR' : e.message}, status=400)
-
-        except KeyError:
-            return JsonResponse({'ERROR' : 'KEY_ERROR'}, status=400)
+        except (ValidationError, KeyError) as e:
+            return JsonResponse({'ERROR' : str(e)}, status=400)

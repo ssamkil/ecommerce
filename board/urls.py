@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 from rest_framework          import permissions
 from drf_yasg.views          import get_schema_view
 from drf_yasg                import openapi
+from drf_spectacular.views   import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -29,5 +30,8 @@ urlpatterns = [
     path('orders/', include('orders.urls')),
     path('accounts/', include('allauth.urls')),
     path('comments/', include('comments.urls')),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
 ] # + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

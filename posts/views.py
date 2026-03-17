@@ -2,11 +2,24 @@ import json, math
 
 from django.http                import JsonResponse
 from rest_framework.views       import APIView
+from drf_spectacular.utils      import extend_schema, OpenApiParameter, OpenApiTypes
 
 from .models                    import Post
 from core.utils                 import authorization
 
 class PostView(APIView):
+    """
+    게시글 관리 API
+    """
+
+    @extend_schema(
+        summary="게시글 조회",
+        description="ID를 통한 단일 게시글 조회 또는 페이지네이션이 적용된 목록 조회를 수행합니다.",
+        parameters=[
+            OpenApiParameter(name='id', description='조회할 게시글 ID (단일 조회 시)', required=False, type=int),
+            OpenApiParameter(name='page', description='페이지 번호 (목록 조회 시, 기본값: 1)', required=False, type=int),
+        ]
+    )
     def get(self, request):
         post_id = request.GET.get('id')
         if post_id:
@@ -39,6 +52,20 @@ class PostView(APIView):
             except ValueError:
                 return JsonResponse({'ERROR': 'INVALID_PAGE_NUMBER'}, status=400)
 
+    @extend_schema(
+        summary="게시글 작성",
+        description="새로운 게시글을 작성합니다.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string', 'description': '게시글 제목'},
+                    'body': {'type': 'string', 'description': '게시글 본문'}
+                },
+                'required': ['title', 'body']
+            }
+        }
+    )
     @authorization
     def post(self, request):
         try:
@@ -59,6 +86,26 @@ class PostView(APIView):
         except json.JSONDecodeError:
             return JsonResponse({'ERROR': 'JSON_DECODE_ERROR'}, status=400)
 
+    @extend_schema(
+        summary="게시글 수정",
+        description="본인이 작성한 게시글의 제목이나 본문을 수정합니다.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer', 'description': '수정할 게시글 ID'},
+                    'title': {'type': 'string', 'description': '수정할 제목'},
+                    'body': {'type': 'string', 'description': '수정할 본문'}
+                },
+                'required': ['id']
+            }
+        },
+        responses={
+            200: OpenApiTypes.OBJECT,
+            403: {"description": "작성자가 아님"},
+            404: {"description": "게시글 없음"}
+        }
+    )
     @authorization
     def patch(self, request):
         try:
@@ -87,6 +134,24 @@ class PostView(APIView):
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
+    @extend_schema(
+        summary="게시글 삭제",
+        description="본인이 작성한 게시글을 삭제합니다.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer', 'description': '삭제할 게시글 ID'}
+                },
+                'required': ['id']
+            }
+        },
+        responses={
+            200: OpenApiTypes.OBJECT,
+            403: {"description": "작성자가 아님"},
+            404: {"description": "게시글 없음"}
+        }
+    )
     @authorization
     def delete(self, request):
         try:

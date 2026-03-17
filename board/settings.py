@@ -63,6 +63,32 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Ecommerce Project',
+    'DESCRIPTION': 'Ecommerce를 위한 API 문서',
+    'SERVE_INCLUDE_SCHEMA': False,
+
+    'COMPONENT_SPLIT_PATCH': True,
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'jwtAuth': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization',
+                'description': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.H-4uNEFfN_WqqOB_GOBvONtJ9rOACKOx22Zev29GJxA'
+            }
+        }
+    },
+
+    'SECURITY': [{
+        'jwtAuth': [],
+    }],
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

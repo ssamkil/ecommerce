@@ -4,7 +4,7 @@ from django.http            import JsonResponse
 from django.core.exceptions import ValidationError
 from django.db.models       import F, Sum
 from rest_framework.views   import APIView
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils  import extend_schema
 
 from core.utils             import authorization
 from .models                import Cart
@@ -13,14 +13,13 @@ from items.models           import Item
 class CartView(APIView):
     """
     장바구니 관리 API
-    - 장바구니 담기, 조회, 수량 수정, 삭제 기능을 제공합니다.
     """
-    @swagger_auto_schema(operation_description="장바구니에 담긴 상품 목록을 불러옵니다.")
+
+    @extend_schema(summary="장바구니 목록 조회", description="유저의 장바구니 담긴 상품 목록과 총 결제 금액을 불러옵니다.")
     @authorization
     def get(self, request):
         try:
             user = request.user
-
             carts = Cart.objects.filter(user=user).select_related('item')
 
             if not carts.exists():
@@ -41,17 +40,12 @@ class CartView(APIView):
 
         except ValidationError as e:
             return JsonResponse({'ERROR': e.message}, status=400)
-
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
-    @swagger_auto_schema(operation_description="상품을 장바구니에 추가합니다.")
+    @extend_schema(summary="장바구니 상품 추가", description="새로운 상품을 장바구니에 담거나, 이미 있는 상품의 수량을 업데이트합니다.")
     @authorization
     def post(self, request):
-        """
-        상품을 장바구니에 추가합니다.
-        - 동일한 상품이 이미 있을 경우 수량만 증가시킵니다.
-        """
         try:
             data = json.loads(request.body)
             user = request.user
@@ -82,10 +76,10 @@ class CartView(APIView):
 
         except ValidationError as e:
             return JsonResponse({'ERROR': e.message}, status=400)
-
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
 
+    @extend_schema(summary="장바구니 상품 삭제", description="장바구니에서 특정 항목을 삭제합니다.")
     @authorization
     def delete(self, request):
         try:
@@ -100,6 +94,5 @@ class CartView(APIView):
 
         except Cart.DoesNotExist:
             return JsonResponse({'ERROR': 'CART_DOES_NOT_EXIST'}, status=404)
-
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
