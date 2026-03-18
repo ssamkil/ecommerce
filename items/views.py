@@ -12,9 +12,9 @@ from drf_spectacular.utils      import extend_schema, OpenApiParameter
 from .models                    import Item, Category, Review
 from core.utils                 import authorization
 
-class ItemView(APIView):
+class ItemListView(APIView):
     """
-    상품 관리 API
+        상품 관리 API
     """
 
     @extend_schema(
@@ -54,25 +54,25 @@ class ItemView(APIView):
             for item in items_page:
                 image_url = item.image.url if item.image else None
                 result.append({
-                    'id'            : item.id,
-                    'name'          : item.name,
-                    'category_name' : item.category.name,
-                    'price'         : item.price,
-                    'quantity'      : item.quantity,
-                    'image_url'     : image_url,
-                    'category_id'   : item.category_id,
-                    'created_at'    : item.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at'   : item.modified_at.strftime('%Y-%m-%d %H:%M:%S')
+                    'id': item.id,
+                    'name': item.name,
+                    'category_name': item.category.name,
+                    'price': item.price,
+                    'quantity': item.quantity,
+                    'image_url': image_url,
+                    'category_id': item.category_id,
+                    'created_at': item.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at': item.modified_at.strftime('%Y-%m-%d %H:%M:%S')
                 })
 
             cache.set(cache_key, result, timeout=600)
 
             return JsonResponse({
-                'MESSAGE'       : 'SUCCESS (DB)',
-                'RESULT'        : result,
-                'TOTAL_COUNT'   : paginator.count,
-                'TOTAL_PAGES'   : paginator.num_pages,
-                'CURRENT_PAGE'  : items_page.number
+                'MESSAGE': 'SUCCESS (DB)',
+                'RESULT': result,
+                'TOTAL_COUNT': paginator.count,
+                'TOTAL_PAGES': paginator.num_pages,
+                'CURRENT_PAGE': items_page.number
             }, status=200)
 
         except (ValidationError, KeyError, Exception) as e:
@@ -99,10 +99,10 @@ class ItemView(APIView):
     def post(self, request):
         try:
             category_id = request.POST['category_id']
-            name        = request.POST['name']
-            price       = request.POST['price']
-            quantity    = request.POST['quantity']
-            image_file  = request.FILES.get('image')
+            name = request.POST['name']
+            price = request.POST['price']
+            quantity = request.POST['quantity']
+            image_file = request.FILES.get('image')
 
             if not name or not price or not quantity:
                 return JsonResponse({'ERROR': 'EMPTY_VALUE'}, status=400)
@@ -113,11 +113,11 @@ class ItemView(APIView):
                 return JsonResponse({'ERROR': 'ITEM_ALREADY_EXISTS'}, status=400)
 
             Item.objects.create(
-                category    = category,
-                name        = name,
-                price       = price,
-                quantity    = quantity,
-                image       = image_file,
+                category=category,
+                name=name,
+                price=price,
+                quantity=quantity,
+                image=image_file,
             )
 
             try:
@@ -132,6 +132,11 @@ class ItemView(APIView):
 
         except KeyError:
             return JsonResponse({'ERROR': 'KEY_ERROR'}, status=400)
+
+class ItemDetailView(APIView):
+    """
+        상품 관리 API
+    """
 
     @extend_schema(
         summary="상품 정보 수정",
