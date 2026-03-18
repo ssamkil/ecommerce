@@ -1,9 +1,7 @@
-from django.urls import path, include
-from .views      import *
+from django.urls import path
+from .views import OrderListView, OrderDetailView
 
 urlpatterns = [
-    path('', include([
-        path('', OrderView.as_view()),
-        path('<int:order_id>/', OrderView.as_view())
-    ])),
+    path('', OrderListView.as_view()),
+    path('<int:order_id>/', OrderDetailView.as_view()),
 ]

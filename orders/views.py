@@ -10,11 +10,11 @@ from django.db              import transaction, IntegrityError, DatabaseError
 from django.db.models       import F, Sum
 from django.core.exceptions import ValidationError
 from rest_framework.views   import APIView
-from drf_spectacular.utils  import extend_schema, OpenApiTypes, OpenApiResponse
+from drf_spectacular.utils  import extend_schema, OpenApiResponse
 
-class OrderView(APIView):
+class OrderListView(APIView):
     """
-    주문 관리 API
+        주문 관리 API
     """
 
     @extend_schema(
@@ -55,11 +55,11 @@ class OrderView(APIView):
                     ).select_related(
                         'item'
                     ).annotate(
-                        price = Sum(F('item__quantity') * F('item__price'))
+                        price=Sum(F('item__quantity') * F('item__price'))
                     )
 
                     if not carts.exists():
-                        return JsonResponse({'MESSAGE' : 'EMPTY_CART'}, status=400)
+                        return JsonResponse({'MESSAGE': 'EMPTY_CART'}, status=400)
 
                     cart_items = list(carts)
                     item_ids = [cart.item.id for cart in cart_items]
@@ -105,6 +105,11 @@ class OrderView(APIView):
 
         except (ValidationError, KeyError, ValueError) as e:
             return JsonResponse({'ERROR': str(e)}, status=400)
+
+class OrderDetailView(APIView):
+    """
+    주문 관리 API
+    """
 
     @extend_schema(
         summary="주문 상세 조회",
