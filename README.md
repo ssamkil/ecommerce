@@ -34,3 +34,6 @@
 > ### 테스트 커버리지
   * Test Summary
     - 프로젝트의 안정성과 데이터 무결성을 보장하기 위해 핵심 비즈니스 로직에 대해 82% 이상의 유닛 테스트 커버리지를 달성하였습니다.
+
+> API Documentation
+  - http://3.107.250.88:80/api/schema/swagger-ui/
