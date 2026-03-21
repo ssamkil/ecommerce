@@ -5,7 +5,7 @@ from django.test  import TestCase, Client
 from my_settings  import SECRET_KEY, ALGORITHM
 from posts.models import Post
 from users.models import User
-# Create your tests here.
+
 class PostViewTest(TestCase):
     def setUp(self):
         self.client = Client()

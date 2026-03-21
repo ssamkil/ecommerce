@@ -1,5 +1,4 @@
 import json
-
 from django.http                import JsonResponse
 from django.core.cache          import cache
 from django.core.exceptions     import ValidationError
@@ -8,7 +7,6 @@ from django.core.paginator      import Paginator
 from django.db                  import transaction, DatabaseError
 from rest_framework.views       import APIView
 from drf_spectacular.utils      import extend_schema, OpenApiParameter
-
 from .models                    import Item, Category, Review
 from core.utils                 import authorization
 

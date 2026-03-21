@@ -1,11 +1,10 @@
-import json, jwt
-
+import jwt
 from django.test  import TestCase, Client
-
 from my_settings  import SECRET_KEY, ALGORITHM
 from items.models import Item, Category
 from carts.models import Cart
 from users.models import User
+
 class CartViewTest(TestCase):
     def setUp(self):
         self.client = Client()

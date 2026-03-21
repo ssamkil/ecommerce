@@ -1,9 +1,7 @@
 import json, math
-
 from django.http                import JsonResponse
 from rest_framework.views       import APIView
 from drf_spectacular.utils      import extend_schema, OpenApiParameter, OpenApiTypes
-
 from .models                    import Post
 from core.utils                 import authorization
 

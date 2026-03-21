@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import pymysql, os, sentry_sdk, logging
-
 from my_settings                        import DATABASES, SECRET_KEY
 from pathlib                            import Path
 from datetime                           import timedelta
